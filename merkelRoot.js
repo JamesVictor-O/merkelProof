@@ -1,60 +1,10 @@
 const crypto = require("crypto");
 
-function sha256(data) {
-  return crypto.createHash("sha256").update(data).digest("hex");
-}
-
-let data = ["A", "B", "C", "D", "E", "G", "F"];
-
-// hashing the row datas into hash
-let leafs = data.map(sha256);
-
-function MerkelRoot(leafs) {
-  if (leafs.length === 0) throw new Error("No leaf Provided");
-
-  let tree = [...leafs];
-
-  // building the three
-  while (tree.length > 1) {
-    const nextLevel = [];
-
-    for (i = 0; i < tree.length; i += 2) {
-      left = tree[i];
-      right = tree[i + 1] || left;
-      nextLevel.push(sha256(left + right));
-    }
-
-    tree = nextLevel;
-  }
-
-  console.log(tree);
-}
-
-// MerkelRoot(leafs)
-
-// build the merkelTree
-
-function buildMerkleTree(data){
-    if(data.length == 0) throw new Error("cant build a merkleTree with zero data");
-     tree=[data.map(sha256)]
-
-     while(tree[tree.length -1].length > 1){
-        const currentTree=tree[tree.length -1]
-        let nextBranch=[]
-        
-        for(i=0; i<currentTree.length ; i+=2){
-            let left=currentTree[i]
-            let right=currentTree[i+1] || left;
-            nextBranch.push(sha256(left + right));
-        }
-        tree.push(nextBranch)
-     }
-
-     return tree;
-}
 
 
 // using class
+
+let transaction=["james", "victor", "ochula"]
 
 class MerkelTree{
     constructor(leaves, hashFunction=null){
@@ -97,9 +47,17 @@ class MerkelTree{
     merkelRoot(){
         return this.layers[this.layers.length-1][0]
     }
+
+    findTransactionIndex(transactionName) {
+        let data=JSON.stringify(transactionName)
+        const hashedInput= crypto.createHash("sha256").update(data).digest("hex");
+        return this.layers[0].findIndex(tx => tx === hashedInput);
+    }
+
     // to get the  proof
-    getProof(index){
-        let currentIndex=index;
+    getProof(transactionName){
+        let currentIndex=this.findTransactionIndex(transactionName);
+
         const proof=[];
 
         // go throug each layer;
@@ -147,14 +105,11 @@ class MerkelTree{
 
 }
 
-const merkelTree=new MerkelTree(data)
-let root=merkelTree.merkelRoot()
+let myMerkelTree=new MerkelTree(transaction)
+let root=myMerkelTree.merkelRoot()
 
-const index = 2;
-let proof=merkelTree.getProof(index);
+let proof=myMerkelTree.getProof("victor");
+let verify=myMerkelTree.verifyProof("victor",proof,root)
 
-const leaf=data[index]
-let verify=merkelTree.verifyProof(leaf,proof,root);
-
-console.log(proof)
+console.log(verify)
 
